@@ -12,13 +12,15 @@ import java.io.IOException;
  * @version 1.1 February 2009
  */
 public class SudokuTester {
-
+	private static final String FILEPATH = "soduku/";
+	
 	/**
 	 * @param argv not used.
 	 * 
 	 * @throws java.io.IOException
 	 */
 	public static void main(String[] argv) throws java.io.IOException {
+		
 		SudokuSolver acSolver = new SudokuSolver();
 		System.out.println(acSolver.authors() + "\n");
 
@@ -76,7 +78,7 @@ public class SudokuTester {
 		long time = System.currentTimeMillis();
 		try {
 			System.out.println("Board '" + boardName + "': ");
-			int[][] problem = SudokuUtil.readInBoard(boardName + ".sud", 9);
+			int[][] problem = SudokuUtil.readInBoard(FILEPATH + boardName + ".sud", 9);
 			if (verbose)
 				System.out.println(SudokuUtil.formatBoard(problem));
 			System.out.print("Solution: ");
