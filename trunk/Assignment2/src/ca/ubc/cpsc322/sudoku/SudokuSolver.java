@@ -9,7 +9,7 @@ public class SudokuSolver {
 	 * @return names of the authors and their student IDs (1 per line).
 	 */
 	public String authors() {
-		return "Stephen Kidson - #15345077\n\rJeff Payan - #18618074";
+		return "Stephen Kidson - #15345077\nJeff Payan - #18618074";
 	}
 
 	/**
@@ -20,16 +20,52 @@ public class SudokuSolver {
 	 */
 	public int[][] solve(int[][] board) {
 		init(board);
-		
-		
-		
+		while(!isFinished()) {
+			for (int x = 0; x < 9; x++)
+				for (int y = 0; y < 9; y++)
+					if (!domains[x][y].isComplete())
+						probe(x, y);
+		}
+		for (int x = 0; x < 9; x++)
+			for (int y = 0; y < 9; y++)
+				board[x][y] = domains[x][y].getValue();
 		return board;
 	}
 			
 	private void init(int[][] board) {
-		for (int x = 0; x < board.length; x++)
-			for (int y = 0; y < board.length; y++)
+		for (int x = 0; x < 9; x++)
+			for (int y = 0; y < 9; y++)
 				domains[x][y] = new Cell(board[x][y]);
+	}
+	
+	/**
+	 * Reduces this cell's domain, then others potentially affected.
+	 * @param x
+	 * @param y
+	 */
+	private void probe(int x, int y) {
+		for (int i = 0; i < 9; i++)
+			domains[x][y].remove(domains[i][y].getValue());
+		for (int i = 0; i < 9; i++)
+			domains[x][y].remove(domains[x][i].getValue());
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				if ((i != x) || (j != y))
+					domains[x][y].remove(domains[x/3 + i][y/3 + j].getValue());
+		
+		// Arc Consistency - Backtrack
+		/* TODO currently causing stack overflows, maybe use of couldBe() method 
+		 * in Cell can reduce unnecessary recursion.*/
+		for (int i = 0; i < 9; i++)
+			if (i != x)
+				probe(i, y);
+		for (int i = 0; i < 9; i++)
+			if (i != y)
+				probe(x, i);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				if ((i != x) || (j != y))
+					probe(x/3 + i, y/3 + j);
 	}
 	
 	/**
@@ -39,23 +75,29 @@ public class SudokuSolver {
 	 * @return
 	 */
 	private boolean validate(int value, int x, int y) {
-		// Check that the 3x3 square this cell is located in does not already contain this value
-		
-		
 		// Check that this cell's row does not already contain this value
-		for (int i = 0; i < 9; i++) {
-			if (i == x)
-				continue;
-			if (domains[i][y].isComplete() && domains[i][y].getValue() == value)
+		for (int i = 0; i < 9; i++)
+			if (i != x && domains[i][y].getValue() == value)
 				return false;
-		}
 		// Check that this cell's column does not already contain this value
-		for (int i = 0; i < 9; i++) {
-			if (i == y)
-				continue;
-			if (domains[x][i].isComplete() && domains[x][i].getValue() == value)
+		for (int i = 0; i < 9; i++)
+			if (i != y && domains[x][i].getValue() == value)
 				return false;
-		}
+		// Check that the 3x3 square this cell is located in does not already contain this value
+		// Note that we do not have to check the squares in the same row or column as this has already been done
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				if (((i != x) || (j != y)) &&
+					domains[x/3 + i][y/3 + j].getValue() == value)
+					return false;
+		return true;
+	}
+	
+	private boolean isFinished() {
+		for (Cell[] row : domains)
+			for (Cell cell : row)
+				if (!cell.isComplete())
+					return false;
 		return true;
 	}
 	
@@ -66,13 +108,12 @@ public class SudokuSolver {
 			this.setValue(value);
 		}
 		
-		/**
-		 * Removes value from this cell's possible domain. Returns true if domain only has one result, else false.
-		 * @param value value to remove from this cell's domain.
-		 */
 		public void remove(int value) {
-			if (!isComplete())
-				domain[value-1] = false;
+			if (!isComplete()) {
+				try {
+					domain[value-1] = false;
+				} catch (IndexOutOfBoundsException ignore) {}
+			}
 		}
 		
 		public boolean isComplete() {
@@ -87,18 +128,26 @@ public class SudokuSolver {
 		
 		public void setValue(int value) {
 			for (int i = 0; i < domain.length; i++) {
-				if (!(i == (value-1)))
+				if (i == value)
+					domain[i] = true;
+				else
 					domain[i] = false;
 			}
 		}
 		
 		public int getValue() {
+			if (!isComplete())
+				return 0;
 			int value = 0;
 			for (int i = 0; i < domain.length; i++) {
 				if (domain[i])
 					value = i;
 			}
 			return value+1;
+		}
+		
+		public boolean couldBe(int value) {
+			return(domain[value-1]);
 		}
 		
 	}
