@@ -1,5 +1,7 @@
 package ca.ubc.cpsc322.sudoku;
 
+import java.util.Vector;
+
 /**
  * Place for your code.
  */
@@ -20,7 +22,56 @@ public class SudokuSolver {
 	 * @return the solved Sudoku board
 	 */
 	public int[][] solve(int[][] board) {
-		// TODO write it;
+	
 		return board;
+	}
+	
+	public class Cell {
+		private Vector<Integer> domain;
+		private int location;
+		
+		public Cell(int location){
+			this.location = location;
+			for (int i = 1; i<10; i++){
+				domain.add(i);
+			}
+		}
+		
+		public int getLocation(){
+			return this.location;
+		}
+		
+		public Vector<Integer> getDomain(){
+			return domain;
+		}
+		
+		public void setDomain(Vector<Integer> domain){
+			this.domain = domain;
+		}
+		
+	}
+	
+	public class Row{
+		Vector<Cell> cells = new Vector<Cell>();
+		
+		public Row(Vector<Cell> cells){
+			this.cells = cells;
+		}
+		
+		public boolean checkRow(){
+			return false;
+		}
+	}
+	
+	public class Square{
+		Vector<Cell> cells = new Vector<Cell>();
+		
+		public Square(Vector<Cell> cells){
+			this.cells = cells;
+		}
+		
+		public boolean checkSquare(){
+			return false;
+		}
 	}
 }
