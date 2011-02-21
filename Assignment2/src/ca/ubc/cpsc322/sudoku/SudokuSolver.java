@@ -20,15 +20,15 @@ public class SudokuSolver {
 	 */
 	public int[][] solve(int[][] board) {
 		init(board);
-		while(!isFinished()) {
+		while(!isFinished())
 			for (int x = 0; x < 9; x++)
 				for (int y = 0; y < 9; y++)
-					if (!domains[x][y].isComplete())
-						probe(x, y);
-		}
+					probe(x, y);
+		
 		for (int x = 0; x < 9; x++)
 			for (int y = 0; y < 9; y++)
 				board[x][y] = domains[x][y].getValue();
+		
 		return board;
 	}
 			
@@ -44,6 +44,9 @@ public class SudokuSolver {
 	 * @param y
 	 */
 	private void probe(int x, int y) {
+		if (domains[x][y].isComplete())
+			return;
+		
 		for (int i = 0; i < 9; i++)
 			domains[x][y].remove(domains[i][y].getValue());
 		for (int i = 0; i < 9; i++)
@@ -101,8 +104,20 @@ public class SudokuSolver {
 		return true;
 	}
 	
+	public String toString() {
+		int[][] board = new int[9][9];
+		for (int x = 0; x < 9; x++)
+			for (int y = 0; y < 9; y++)
+				board[x][y] = domains[x][y].getValue();
+		return ("\n" + SudokuUtil.formatBoard(board));
+	}
+	
+	/* ************************ EMBEDDED CLASSES ************************ */
+	
 	public class Cell {
+		// Represents the cell's domain where the array's index+1 maps to the cell's value.
 		boolean[] domain = { true, true, true, true, true, true, true, true, true };
+		int value= 0;
 		
 		public Cell(int value) {
 			this.setValue(value);
@@ -113,20 +128,50 @@ public class SudokuSolver {
 				try {
 					domain[value-1] = false;
 				} catch (IndexOutOfBoundsException ignore) {}
+				if (isComplete())
+					this.set();
 			}
 		}
 		
 		public boolean isComplete() {
+			if (value != 0)
+				return true;
+			
 			int count = 0;
 			for (boolean valid : domain)
 				if (valid)
 					count++;
-			if (count == 1)
+			if (count == 1) {
+				this.set();
 				return true;
+			}
 			return false;
 		}
 		
+		public int getValue() {
+			return value;
+			
+//			int value = 0;
+//			for (int i = 0; i < domain.length; i++)
+//				if (domain[i])
+//					value = i;
+//			return value+1;
+		}
+		
+		public boolean isEmpty() {
+			boolean empty = true;
+			for (boolean valid : domain)
+				if (valid)
+					empty = false;
+			return empty;
+		}
+		
+		public boolean couldBe(int value) {
+			return(domain[value-1]);
+		}
+		
 		public void setValue(int value) {
+			this.value = value;
 			for (int i = 0; i < domain.length; i++) {
 				if (i == value)
 					domain[i] = true;
@@ -135,19 +180,10 @@ public class SudokuSolver {
 			}
 		}
 		
-		public int getValue() {
-			if (!isComplete())
-				return 0;
-			int value = 0;
-			for (int i = 0; i < domain.length; i++) {
+		private void set() {
+			for (int i = 0; i < domain.length; i++)
 				if (domain[i])
-					value = i;
-			}
-			return value+1;
-		}
-		
-		public boolean couldBe(int value) {
-			return(domain[value-1]);
+					setValue(i);
 		}
 		
 	}
