@@ -18,20 +18,24 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 	 * @see scheduler.Scheduler#schedule(scheduler.SchedulingInstance)
 	 */
 	public ScheduleChoice[] solve(SchedulingInstance pInstance) throws Exception {
+		//Set of Variables (Each exam has its own variable) Domain = all possible (Room, Timeslot) combos
+		//Constraint 2 exams cannot be scheduled in the same room/timeslot
 		ScheduleChoice[] bestScheduleFound = new ScheduleChoice[pInstance.numCourses];
 		ScheduleChoice[] tempSched = new ScheduleChoice[pInstance.numCourses];
+		int randomChoice;
 		//Generate random seed for all courses	
 		for(int i = 0; i < pInstance.numCourses; i++){
 			bestScheduleFound[i] = new ScheduleChoice();
 			tempSched[i] = new ScheduleChoice();
-			bestScheduleFound[i].room = r.nextInt(pInstance.numRooms);
-			bestScheduleFound[i].timeslot = r.nextInt(pInstance.numTimeslots);
+			randomChoice = r.nextInt(pInstance.numRooms);
+			bestScheduleFound[i].room = randomChoice;
+			tempSched[i].room = randomChoice;
+			
+			randomChoice = r.nextInt(pInstance.numTimeslots);
+			bestScheduleFound[i].timeslot = randomChoice;
+			tempSched[i].timeslot = randomChoice;
 		}
 		
-		//This sucks.. for improvements
-		//Need to determine all possible conflicts and change variable that reduces conflicts the most
-		
-		//need to work in students some how
 		while( !timeIsUp() && evaluator.violatedConstraints(pInstance, bestScheduleFound)>0 ){
 			for(int i = 0; i < pInstance.numCourses; i++){
 				tempSched[i].room = r.nextInt(pInstance.numRooms);
