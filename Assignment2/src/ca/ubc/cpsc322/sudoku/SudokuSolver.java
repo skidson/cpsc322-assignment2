@@ -20,6 +20,7 @@ public class SudokuSolver {
 	 */
 	public int[][] solve(int[][] board) {
 		init(board);
+		
 		while(!isFinished())
 			for (int x = 0; x < 9; x++)
 				for (int y = 0; y < 9; y++)
@@ -29,13 +30,19 @@ public class SudokuSolver {
 			for (int y = 0; y < 9; y++)
 				board[x][y] = domains[x][y].getValue();
 		
+		
 		return board;
 	}
 			
 	private void init(int[][] board) {
-		for (int x = 0; x < 9; x++)
-			for (int y = 0; y < 9; y++)
+		for (int y = 0; y < 9; y++)
+			for (int x = 0; x < 9; x++)
 				domains[x][y] = new Cell(board[x][y]);
+		for (int i = 0; i < 9; i++) {
+			System.out.println();
+			for (int j = 0; j < 9; j++)
+				System.out.print(domains[j][i].toString() + "\t\t\t");
+		}
 	}
 	
 	/**
@@ -47,28 +54,33 @@ public class SudokuSolver {
 		if (domains[x][y].isComplete())
 			return;
 		
-		for (int i = 0; i < 9; i++)
-			domains[x][y].remove(domains[i][y].getValue());
-		for (int i = 0; i < 9; i++)
-			domains[x][y].remove(domains[x][i].getValue());
-		for (int i = 0; i < 3; i++)
-			for (int j = 0; j < 3; j++)
-				if ((i != x) || (j != y))
-					domains[x][y].remove(domains[x/3 + i][y/3 + j].getValue());
+		int x_rel = x/3, y_rel = y/3;
+		boolean solved = false;
 		
-		// Arc Consistency - Backtrack
-		/* TODO currently causing stack overflows, maybe use of couldBe() method 
-		 * in Cell can reduce unnecessary recursion.*/
 		for (int i = 0; i < 9; i++)
-			if (i != x)
-				probe(i, y);
+			solved = domains[x][y].remove(domains[i][y].getValue());
 		for (int i = 0; i < 9; i++)
-			if (i != y)
-				probe(x, i);
+			solved = domains[x][y].remove(domains[x][i].getValue()) | solved;
 		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 3; j++)
 				if ((i != x) || (j != y))
-					probe(x/3 + i, y/3 + j);
+					solved = domains[x][y].remove(domains[3*x_rel + i][3*y_rel + j].getValue()) | solved;
+		
+		// In sudoku, other cells are not affected unless this one has reached a solution
+		// If this cell has been solved, check affected cells
+//		if (solved) {
+//			for (int i = 0; i < 9; i++)
+//				if (i != x)
+//					probe(i, y);
+//			for (int i = 0; i < 9; i++)
+//				if (i != y)
+//					probe(x, i);
+//			for (int i = 0; i < 3; i++)
+//				for (int j = 0; j < 3; j++)
+//					if ((i != x) || (j != y))
+//						probe(3*x_rel + i, 3*y_rel + j);
+//			System.out.println(this.toString()); // debug
+//		}
 	}
 	
 	/**
@@ -96,6 +108,7 @@ public class SudokuSolver {
 		return true;
 	}
 	
+	
 	private boolean isFinished() {
 		for (Cell[] row : domains)
 			for (Cell cell : row)
@@ -115,47 +128,54 @@ public class SudokuSolver {
 	/* ************************ EMBEDDED CLASSES ************************ */
 	
 	public class Cell {
-		// Represents the cell's domain where the array's index+1 maps to the cell's value.
+		// Represents the cell's domain where the array's index+1 maps to the cell's sudoku value.
 		boolean[] domain = { true, true, true, true, true, true, true, true, true };
-		int value= 0;
 		
 		public Cell(int value) {
-			this.setValue(value);
+			if (value != 0)
+				this.setValue(value);
 		}
 		
-		public void remove(int value) {
+		/**
+		 * Removes the specified value from this cell's domain. Returns true if this results in the cell
+		 * being complete, false otherwise.
+		 * @param value
+		 * @return A boolean indicating if this cell is now solved.
+		 */
+		public boolean remove(int value) {
 			if (!isComplete()) {
 				try {
 					domain[value-1] = false;
 				} catch (IndexOutOfBoundsException ignore) {}
-				if (isComplete())
-					this.set();
-			}
+				if (isComplete()) {
+					for (int i = 0; i < domain.length; i++) {
+						if (domain[i]) {
+							setValue(i+1);
+							return true;
+						}
+					}
+				}
+			} else
+				return true;
+			return false;
 		}
 		
 		public boolean isComplete() {
-			if (value != 0)
-				return true;
-			
 			int count = 0;
 			for (boolean valid : domain)
 				if (valid)
 					count++;
-			if (count == 1) {
-				this.set();
+			if (count == 1)
 				return true;
-			}
 			return false;
 		}
 		
 		public int getValue() {
-			return value;
-			
-//			int value = 0;
-//			for (int i = 0; i < domain.length; i++)
-//				if (domain[i])
-//					value = i;
-//			return value+1;
+			int value = 0;
+			for (int i = 0; i < domain.length; i++)
+				if (domain[i])
+					value = i;
+			return value+1;
 		}
 		
 		public boolean isEmpty() {
@@ -171,19 +191,22 @@ public class SudokuSolver {
 		}
 		
 		public void setValue(int value) {
-			this.value = value;
 			for (int i = 0; i < domain.length; i++) {
-				if (i == value)
+				if (i == (value-1))
 					domain[i] = true;
 				else
 					domain[i] = false;
 			}
 		}
 		
-		private void set() {
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("{ ");
 			for (int i = 0; i < domain.length; i++)
 				if (domain[i])
-					setValue(i);
+					builder.append(i+1 + " ");
+			builder.append("}");
+			return builder.toString();
 		}
 		
 	}
