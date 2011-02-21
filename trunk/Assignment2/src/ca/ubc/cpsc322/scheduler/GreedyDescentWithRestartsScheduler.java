@@ -1,5 +1,9 @@
 package ca.ubc.cpsc322.scheduler;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
 /**
  * A stub for your Greedy Descent With Restarts scheduler
  */
@@ -20,42 +24,49 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 	public ScheduleChoice[] solve(SchedulingInstance pInstance) throws Exception {
 		//Set of Variables (Each exam has its own variable) Domain = all possible (Room, Timeslot) combos
 		//Constraint 2 exams cannot be scheduled in the same room/timeslot
+		List<int[]> domains = new ArrayList<int[]>();
+		int count =0;
 		ScheduleChoice[] bestScheduleFound = new ScheduleChoice[pInstance.numCourses];
-		ScheduleChoice[] tempSched = new ScheduleChoice[pInstance.numCourses];
-		int randomChoice;
-		//Generate random seed for all courses	
+		for(int i = 0; i < pInstance.numCourses; i++) bestScheduleFound[i] = new ScheduleChoice();
+		
+		for(int i = 0; i < (pInstance.numRooms * pInstance.numTimeslots); i++){
+			domains.add(new int[2]);
+		}
+		
+		for(int i = 0; i < pInstance.numRooms; i++){
+			for(int j = 0; j < pInstance.numTimeslots; j++){
+				int[] filler = new int[2];
+				filler[0] = i;
+				filler[1] = j;
+				domains.set(count, filler);
+				count++;
+			}
+		}
+		
 		for(int i = 0; i < pInstance.numCourses; i++){
-			bestScheduleFound[i] = new ScheduleChoice();
-			tempSched[i] = new ScheduleChoice();
-			randomChoice = r.nextInt(pInstance.numRooms);
-			bestScheduleFound[i].room = randomChoice;
-			tempSched[i].room = randomChoice;
+			int[] choice = domains.remove(r.nextInt(domains.size()));
+			bestScheduleFound[i].room = choice[0];
+			bestScheduleFound[i].timeslot = choice[1];
 			
-			randomChoice = r.nextInt(pInstance.numTimeslots);
-			bestScheduleFound[i].timeslot = randomChoice;
-			tempSched[i].timeslot = randomChoice;
 		}
 		
 		while( !timeIsUp() && evaluator.violatedConstraints(pInstance, bestScheduleFound)>0 ){
-			for(int i = 0; i < pInstance.numCourses; i++){
-				tempSched[i].room = r.nextInt(pInstance.numRooms);
-				tempSched[i].timeslot = r.nextInt(pInstance.numTimeslots);
-				
-				if(evaluator.violatedConstraints(pInstance, tempSched) < evaluator.violatedConstraints(pInstance, bestScheduleFound)){
-					bestScheduleFound[i].room = tempSched[i].room;
-					bestScheduleFound[i].timeslot = tempSched[i].timeslot;
+			//Generate random domain for all exams	
+			
+			/*while(r.nextDouble() < .8 && evaluator.violatedConstraints(pInstance, bestScheduleFound) == Integer.MAX_VALUE){
+				for (int i = 0; i < bestScheduleFound.length; i++) {
+					for (int j = i+1; j < bestScheduleFound.length; j++) {
+						while (bestScheduleFound[i].timeslot == bestScheduleFound[j].timeslot && bestScheduleFound[i].room == bestScheduleFound[j].room) {
+							bestScheduleFound[i].timeslot = r.nextInt(pInstance.numTimeslots);
+						}
+					}
 				}
+			}*/
+			
+			
 				 
 				
 			}
-			//randomly restart 40% of the time
-			if(r.nextDouble() > .6){
-				for(int j = 0; j < pInstance.numCourses; j++){
-					bestScheduleFound[j].room = r.nextInt(pInstance.numRooms);
-					bestScheduleFound[j].timeslot = r.nextInt(pInstance.numTimeslots);
-				}
-			}
-		}
 		return bestScheduleFound;
 	}
 

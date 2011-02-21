@@ -51,21 +51,21 @@ public class SchedulerTester {
 				test(scheduler, evaluator, "instances/singleStudent1.txt", 0, 1, true);
 				
 				// Easy feasible instances with 4 rooms, 3 courses, 3 students, 2 timeslots
-				test(scheduler, evaluator, "instances/simple_1.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/simple_2.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/simple_3.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/simple_4.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/simple_5.txt", 0, 1, false);
+				test(scheduler, evaluator, "instances/simple_1.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/simple_2.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/simple_3.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/simple_4.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/simple_5.txt", 0, 1, true);
 	
 				// Easy infeasible instance with 4 rooms, 3 courses, 3 students, 2 timeslots 
 				test(scheduler, evaluator, "instances/threeStudentsInfeasible.txt", 1, 5, true);
 				
 				// Small instances with 10 rooms, 10 courses, 30 students, 9 timeslots
-				test(scheduler, evaluator, "instances/small_1.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/small_2.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/small_3.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/small_4.txt", 0, 1, false);
-				test(scheduler, evaluator, "instances/small_5.txt", 0, 1, false);
+				test(scheduler, evaluator, "instances/small_1.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/small_2.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/small_3.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/small_4.txt", 0, 1, true);
+				test(scheduler, evaluator, "instances/small_5.txt", 0, 1, true);
 					
 
 				// Medium instances with 10 rooms, 30 courses, 250 students, 20 timeslots
