@@ -26,7 +26,7 @@ public class SudokuTester {
 
 		/** Easy Sudokus */
 		// This Sudoku is already solved, obviously it can be "solved" by AC alone.
-		test(acSolver, "solved", true, true); // Time: 0s (bonus 0s)
+//		test(acSolver, "solved", true, true); // Time: 0s (bonus 0s)
 		// This Sudoku can be solved by AC alone
 		test(acSolver, "easy", true, true); // Time: 0s (bonus 0s)
 		// This Sudoku can not be solved by AC alone, it requires domain splitting.
@@ -86,7 +86,7 @@ public class SudokuTester {
 			if (verbose)
 				System.out.println("\n" + SudokuUtil.formatBoard(solution));
 			if (hasSolution)
-				System.out.println(match(solution, SudokuUtil.readInBoard(boardName + "Solution.sud", 9)) ? "CORRECT" : "INCORRECT");
+				System.out.println(match(solution, SudokuUtil.readInBoard(FILEPATH + boardName + "Solution.sud", 9)) ? "CORRECT" : "INCORRECT");
 			else
 				System.out.println("ERROR: board '" + boardName + "' is not a valid Sudoku. Exception should have been thrown.");
 		} catch (Exception e) {
