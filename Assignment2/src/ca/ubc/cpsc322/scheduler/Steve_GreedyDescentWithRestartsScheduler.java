@@ -7,7 +7,7 @@ import java.util.List;
  * A stub for your Greedy Descent With Restarts scheduler
  */
 public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
-	private static final double RESTART_RATE = 0.2;
+	private static final double RESTART_RATE = 0.6;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
@@ -39,7 +39,7 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 			bestSchedule = restart(pInstance, workingDomain);
 			while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestSchedule) > 0) {
 				// Random restart
-				if (r.nextDouble() > (1.0-RESTART_RATE)) {
+				if (r.nextDouble() < RESTART_RATE) {
 					workingDomain = copy(DOMAIN);
 					bestSchedule = restart(pInstance, workingDomain);
 				}
