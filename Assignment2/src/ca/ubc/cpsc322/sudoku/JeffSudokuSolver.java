@@ -24,9 +24,11 @@ public class JeffSudokuSolver {
 		public int[][] solve(int[][] board) {
 			init(board);
 			
-			while(!isFinished()){
-				
-			}
+//			arcConsistency();
+//			fillBoard();
+//			checkCompleteness
+//			DOMAINSPLIT() ( RECURSIVE)
+//			win
 				
 			
 			return board;
@@ -39,10 +41,6 @@ public class JeffSudokuSolver {
 					System.out.println(cells[x][y].toString());
 				}
 			
-			for(int y=0; y < 9; y++)
-				for(int x = 0; x < 9; x++){
-					createArcs(TDA,x,y);
-				}
 		}
 		
 		/**
