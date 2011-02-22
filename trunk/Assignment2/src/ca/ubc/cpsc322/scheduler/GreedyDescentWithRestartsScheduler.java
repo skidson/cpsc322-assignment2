@@ -2,7 +2,6 @@ package ca.ubc.cpsc322.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * A stub for your Greedy Descent With Restarts scheduler
@@ -13,7 +12,6 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
 	public String authorsAndStudentIDs() {
-		// TODO Your Code Here!
 		return ("Jeffrey Payan \n18618074 \nStephen Kidson \n15310577");
 	}
 
@@ -49,9 +47,9 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 			choice = domains.remove(r.nextInt(domains.size()));
 			bestScheduleFound[i].room = choice[0];
 			bestScheduleFound[i].timeslot = choice[1];
-			
 		}
 		tempSched = bestScheduleFound;
+		
 		while( !timeIsUp() && evaluator.violatedConstraints(pInstance, bestScheduleFound)>0 ){
 			//If there is some unused timeslot, swap a doubled up to that one
 			//Put old domain back so it can be reused

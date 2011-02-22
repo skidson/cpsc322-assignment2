@@ -25,7 +25,7 @@ public class SchedulerTester {
 		
 		//=== We'll use the following 2 schedulers.
 		Scheduler[] schedulers = new Scheduler[2];
-		schedulers[0] = new GreedyDescentWithRestartsScheduler();
+		schedulers[0] = new Steve_GreedyDescentWithRestartsScheduler();
 		schedulers[1] = new FavouriteSLSScheduler();
 		
 		for (int i = 0; i < evaluators.length; i++) {

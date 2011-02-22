@@ -8,7 +8,7 @@ import java.util.Vector;
  * @author Erik Peter Zawadzki, adapted by Frank Hutter
  */
 
-public class OrigEvaluator implements Evaluator{
+public class OrigEvaluator implements Evaluator {
 
 	/**
 	 * This is a function that scores a complete assignment of variables. 
