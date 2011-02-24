@@ -2,12 +2,12 @@ package ca.ubc.cpsc322.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 /**
  * A stub for your second scheduler
  */
 public class FavouriteSLSScheduler extends Scheduler {
-	ScheduleChoice[] bestSchedule;
 	SchedulingInstance pInstance;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
@@ -22,10 +22,9 @@ public class FavouriteSLSScheduler extends Scheduler {
 	 */
 	public ScheduleChoice[] solve(SchedulingInstance pInstance) throws Exception {
 		this.pInstance = pInstance;
-		ScheduleChoice[] bestScheduleFound = null;
 		
 		// Populate the domain
-		List<ScheduleChoice> DOMAIN = new ArrayList<ScheduleChoice>();
+		Vector<ScheduleChoice> DOMAIN = new Vector<ScheduleChoice>();
 		for (int room = 0; room < pInstance.numRooms; room++) {
 			for (int timeslot = 0; timeslot < pInstance.numTimeslots; timeslot++) {
 				ScheduleChoice choice = new ScheduleChoice();
@@ -34,13 +33,13 @@ public class FavouriteSLSScheduler extends Scheduler {
 				DOMAIN.add(choice);
 			}
 		}
-		this.bestSchedule = restart(copy(DOMAIN));
-		while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestScheduleFound) > 0){
-			Searcher searcher = new Searcher(restart(copy(DOMAIN)), copy(DOMAIN));
-			new Thread(searcher).start();
+		
+		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN));
+		while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestSchedule) > 0) {
+			// Bayesian Optimization
 		}
 		
-		return this.bestSchedule;
+		return bestSchedule;
 	}
 	
 	private ScheduleChoice[] restart(List<ScheduleChoice> domain) {
@@ -69,50 +68,6 @@ public class FavouriteSLSScheduler extends Scheduler {
 		for(ScheduleChoice choice : domain)
 			copy.add(choice.clone());
 		return copy;
-	}
-	
-	private void submit(ScheduleChoice[] test) throws Exception {
-		synchronized(bestSchedule) {
-			if (evaluator.violatedConstraints(pInstance, test) < evaluator.violatedConstraints(pInstance, bestSchedule))
-				bestSchedule = test.clone();
-		}
-	}
-	
-	private class Searcher implements Runnable {
-		private ScheduleChoice[] schedule;
-		private List<ScheduleChoice> domain;
-		
-		public Searcher(ScheduleChoice[] schedule, List<ScheduleChoice> domain) {
-			this.schedule = schedule.clone();
-			this.domain = copy(domain);
-		}
-		
-		public void run() {
-			ScheduleChoice[] bestChoice = schedule.clone();
-			List<ScheduleChoice> tempDomain = copy(domain);
-			int min;
-			try {
-				min = evaluator.violatedConstraints(pInstance, schedule);
-				for(int i = 0; i < schedule.length; i++) {
-					ScheduleChoice[] tempSchedule = schedule.clone();
-					int index = r.nextInt(tempSchedule.length + domain.size());
-					tempDomain = copy(domain);
-					if (index > tempSchedule.length) {
-						index -= tempSchedule.length;
-						tempSchedule = swap(tempSchedule, tempDomain, i, index);
-					} else
-						tempSchedule = swap(tempSchedule, i, index);
-					int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-					if (score < min) {
-						min = score;
-						bestChoice = tempSchedule.clone();
-					}
-				}
-				submit(bestChoice);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 }
