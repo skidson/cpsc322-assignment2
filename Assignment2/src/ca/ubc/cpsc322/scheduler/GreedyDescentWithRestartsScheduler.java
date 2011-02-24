@@ -23,6 +23,7 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 	public ScheduleChoice[] solve(SchedulingInstance pInstance) throws Exception {
 		this.pInstance = pInstance;
 		List<ScheduleChoice> workingDomain = new ArrayList<ScheduleChoice>();
+		
 		// Fill the domain of all possible ScheduleChoices
 		for (int room = 0; room < pInstance.numRooms; room++) {
 			for (int timeslot = 0; timeslot < pInstance.numTimeslots; timeslot++) {
@@ -34,21 +35,24 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 		}
 		
 		final List<ScheduleChoice> DOMAIN = copy(workingDomain);
-		ScheduleChoice[] bestSchedule = restart(workingDomain);
-		int v = 0;
+		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN), true);
 		int min = evaluator.violatedConstraints(pInstance, bestSchedule);
 		
-		while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestSchedule) > 0) {
+		// Greedy Descent with Two Stage Selection
+		// For each course, find which swap results in lowest # conflicts, then set as best.
+		// Checks all neighbouring values for current variable v before making a decision.
+		int v = 0;
+		while(!timeIsUp() && min > 0) {
 			ScheduleChoice[] tempSchedule = bestSchedule.clone();
 			ScheduleChoice[] bestChoice = bestSchedule.clone();
 			
 			// Random restart
 			if (r.nextDouble() < RESTART_RATE) {
 				workingDomain = copy(DOMAIN);
-				bestSchedule = restart(workingDomain);
+				bestSchedule = restart(workingDomain, true);
 			}
 			
-			// Greedy Descent with Two Stage Selection
+			// Swap with unused options in working domain
 			for (ScheduleChoice choice : workingDomain) {
 				tempSchedule = bestSchedule.clone();
 				tempSchedule[v] = choice;
@@ -58,10 +62,11 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 					bestChoice = tempSchedule.clone();
 				}
 			}
+			
 			// Swap with another course's exam slot
 			for (int j = v + 1; j < bestSchedule.length; j++) {
 				tempSchedule = bestSchedule.clone();
-				tempSchedule = swap(tempSchedule.clone(), v, j);
+				swap(tempSchedule.clone(), v, j);
 				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
 				if (score < min) {
 					min = score;
@@ -76,13 +81,24 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 		return bestSchedule;
 	}
 	
-	private ScheduleChoice[] swap(ScheduleChoice[] schedule, int a, int b) {
-		ScheduleChoice temp = schedule[a];
-		schedule[a] = schedule[b];
-		schedule[b] = temp;
-		return schedule;
+	/**
+	 * Swaps the two elements of this array at the indicated indices.
+	 * @param array the array to be modified.
+	 * @param a the index of the first element.
+	 * @param b the index of the second element.
+	 */
+	private void swap(Object[] array, int a, int b) {
+		Object temp = array[a];
+		array[a] = array[b];
+		array[b] = temp;
 	}
 	
+	/**
+	 * Copies the contents of the passed List using each element's clone
+	 * method and returns a deep copy of the List.
+	 * @param domain
+	 * @return
+	 */
 	private List<ScheduleChoice> copy(List<ScheduleChoice> domain) {
 		List<ScheduleChoice> copy = new ArrayList<ScheduleChoice>();
 		for(ScheduleChoice choice : domain)
@@ -90,11 +106,20 @@ public class GreedyDescentWithRestartsScheduler extends Scheduler {
 		return copy;
 	}
 	
-	private ScheduleChoice[] restart(List<ScheduleChoice> domain) {
+	/**
+	 * Creates an array initialized with the values from the specified domain.
+	 * @param domain a List of acceptable values.
+	 * @param unique whether values in the domain are unique (i.e. duplicates may exist).
+	 * @return
+	 */
+	private ScheduleChoice[] restart(List<ScheduleChoice> domain, boolean unique) {
 		ScheduleChoice[] schedule = new ScheduleChoice[pInstance.numCourses];
-		for(int i = 0; i < pInstance.numCourses; i++)
-			// remove() avoids violating hard constraint, get() allows duplicates
-			schedule[i] = domain.remove(r.nextInt(domain.size())); 
+		for(int i = 0; i < pInstance.numCourses; i++) {
+			if (unique)
+				schedule[i] = domain.remove(r.nextInt(domain.size()));
+			else
+				schedule[i] = domain.get(r.nextInt(domain.size()));
+		}
 		return schedule;
 	}
 }
