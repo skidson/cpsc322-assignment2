@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class FavouriteSLSScheduler extends Scheduler {
 	private SchedulingInstance pInstance;
-	private static final int CACHE_SIZE = 3;
+	private static final double MUTATION_RATE = 0.1;
 	private static final double RESTART_RATE = 0.6;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
@@ -34,84 +34,38 @@ public class FavouriteSLSScheduler extends Scheduler {
 				workingDomain.add(choice);
 			}
 		}
+		
 		final List<ScheduleChoice> DOMAIN = copy(workingDomain);
 		
 		// Initialize to a random variable assignment
-		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN), true);
-		ScheduleChoice[][] cache = new ScheduleChoice[CACHE_SIZE][bestSchedule.length];
+		ScheduleChoice[] adam = restart(copy(DOMAIN), false), eve = restart(copy(DOMAIN), false);
+		ScheduleChoice[][] humanity = new ScheduleChoice[4][pInstance.numCourses];
+		humanity[0] = adam.clone();
+		humanity[1] = eve.clone();
+		humanity[2] = sex(adam, eve, copy(DOMAIN));
+		humanity[3] = sex(eve, adam, copy(DOMAIN));
 		
-		// Initialize the cache
-		for (int i = 0; i < CACHE_SIZE; i++)
-			cache[i] = bestSchedule;
-		
-		int min = evaluator.violatedConstraints(pInstance, bestSchedule);
-		
-		// Greedy Descent with Two Stage Selection and Steve's 1337 skillz
-		// Restarts when stagnant. Randomly revert to cached value.
-		int v = 0; int c = 0;
-		final int STAGNANT = DOMAIN.size()/bestSchedule.length;
+		try {
+		int min = Integer.MAX_VALUE;
 		while(!timeIsUp() && min > 0) {
-			ScheduleChoice[] tempSchedule = bestSchedule.clone();
-			ScheduleChoice[] bestChoice = bestSchedule.clone();
-			
-			// Cache the current schedule and return to previously cached value
-			if (r.nextDouble() < RESTART_RATE) {
-				workingDomain = copy(DOMAIN);
-				bestSchedule = restart(workingDomain, true);
-			}
-			
-			// Swap with unused options in working domain
-			for (ScheduleChoice choice : workingDomain) {
-				tempSchedule = bestSchedule.clone();
-				tempSchedule[v%tempSchedule.length] = choice;
-				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+			for (int i = 0; i < humanity.length; i++) {
+				int score = evaluator.violatedConstraints(pInstance, humanity[i]);
 				if (score < min) {
-					cache[(c++)%CACHE_SIZE] = bestSchedule.clone();
 					min = score;
-					bestChoice = tempSchedule.clone();
+					eve = adam.clone();
+					adam = humanity[i].clone();
 				}
 			}
-			// Swap with another course's exam slot
-			for (int j = (v%tempSchedule.length) + 1; j < bestSchedule.length; j++) {
-				tempSchedule = bestSchedule.clone();
-				swap(tempSchedule, (v%tempSchedule.length), j);
-				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-				if (score < min) {
-					cache[(c++)%CACHE_SIZE] = bestSchedule.clone();
-					min = score;
-					bestChoice = tempSchedule.clone();
-				}
-			}
-			if (v++ >= STAGNANT)
-				bestChoice = cache[c++%CACHE_SIZE];
-			bestSchedule = bestChoice.clone();
-			min = evaluator.violatedConstraints(pInstance, bestSchedule);
+			humanity[0] = adam.clone();
+			humanity[1] = eve.clone();
+			humanity[2] = sex(adam, eve, copy(DOMAIN));
+			humanity[3] = sex(eve, adam, copy(DOMAIN));
+			min = evaluator.violatedConstraints(pInstance, adam);
 		}
-		
-		// Return the best value in cache.
-		int index = 0;
-		min = evaluator.violatedConstraints(pInstance, cache[0]);
-		for (int i = 1; i < CACHE_SIZE; i++) {
-			int score = evaluator.violatedConstraints(pInstance, cache[i]);
-			if (score < min) {
-				min = score;
-				index = i;
-			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		return cache[index];
-	}
-	
-	/**
-	 * Swaps the two elements of this array at the indicated indices.
-	 * @param array the array to be modified.
-	 * @param a the index of the first element.
-	 * @param b the index of the second element.
-	 */
-	private void swap(Object[] array, int a, int b) {
-		Object temp = array[a];
-		array[a] = array[b];
-		array[b] = temp;
+		return adam;
 	}
 	
 	/**
@@ -142,6 +96,28 @@ public class FavouriteSLSScheduler extends Scheduler {
 				schedule[i] = domain.get(r.nextInt(domain.size()));
 		}
 		return schedule;
+	}
+	
+	/**
+	 * Produces a child that inherits aspects of both parents & random defects
+	 * @param male
+	 * @param female
+	 * @param domain
+	 * @return
+	 */
+	private ScheduleChoice[] sex(ScheduleChoice[] male, 
+			ScheduleChoice[] female, 
+			List<ScheduleChoice> domain) {
+		ScheduleChoice[] child = new ScheduleChoice[male.length];
+		for (int i = 0; i < male.length; i += 2)
+			child[i] = male[i].clone();
+		for (int i = 1; i < male.length; i += 2)
+			child[i] = female[i].clone();
+		
+		while(r.nextDouble() < MUTATION_RATE)
+			child[r.nextInt(child.length)] = domain.get(r.nextInt(domain.size())).clone();
+		
+		return child;
 	}
 
 }
