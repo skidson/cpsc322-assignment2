@@ -56,7 +56,6 @@ public class OrigEvaluator implements Evaluator {
 			}
 		}
 		
-		
 		/* Count student conflicts */
 		int conflicts = 0;
 		Vector<Vector<Integer>> studentsCourses = pInstance.studentsCourses;
