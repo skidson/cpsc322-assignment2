@@ -362,7 +362,6 @@ public class asd {
 					if (itr.hasNext())
 					{
 						int j = itr.next();
-						if (i == 0 && j == 2);
 						if (i != j)
 						{
 							feasible.add(i);
