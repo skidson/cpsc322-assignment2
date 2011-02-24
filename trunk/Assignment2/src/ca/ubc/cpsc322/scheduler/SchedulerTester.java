@@ -36,7 +36,7 @@ public class SchedulerTester {
 				System.out.println("Using improved evaluator\n");
 			}
 			
-			for (int j = 1; j < schedulers.length; j++) {
+			for (int j = 0; j < schedulers.length; j++) {
 				if (j==0) {
 					System.out.println("Running Greedy Descent with Restarts\n");
 				} else {

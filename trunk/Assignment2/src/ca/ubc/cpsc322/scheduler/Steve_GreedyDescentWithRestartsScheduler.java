@@ -21,9 +21,7 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 	 * @see scheduler.Scheduler#schedule(scheduler.SchedulingInstance)
 	 */
 	public ScheduleChoice[] solve(SchedulingInstance pInstance) throws Exception {
-		//Set of Variables (Each exam has its own variable) Domain = all possible (Room, Timeslot) combos
-		//Constraint 2 exams cannot be scheduled in the same room/timeslot
-		List<ScheduleChoice> DOMAIN = new ArrayList<ScheduleChoice>();
+		List<ScheduleChoice> workingDomain = new ArrayList<ScheduleChoice>();
 		ScheduleChoice[] bestSchedule = new ScheduleChoice[pInstance.numCourses];
 		try {
 			// Fill the domain of all possible ScheduleChoices
@@ -32,11 +30,11 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 					ScheduleChoice possibility = new ScheduleChoice();
 					possibility.room = room;
 					possibility.timeslot = timeslot;
-					DOMAIN.add(possibility);
+					workingDomain.add(possibility);
 				}
 			}
 			
-			List<ScheduleChoice> workingDomain = copy(DOMAIN);
+			final List<ScheduleChoice> DOMAIN = copy(workingDomain);
 			bestSchedule = restart(pInstance, workingDomain);
 			ScheduleChoice[] tempSchedule = bestSchedule.clone();
 			ScheduleChoice[] bestChoice = bestSchedule.clone();
@@ -77,8 +75,8 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 				
 				// Greedy Descent
 				// For each course, find which swap results in lowest # conflicts, then set as best
-				// Note: checks all neighbours before making a decision.
-				for (int i = 0; i < bestSchedule.length; i++) {
+				// Checks all neighbours before making a decision.
+				/*for (int i = 0; i < bestSchedule.length; i++) {
 					// Swap with unused options in working domain
 					for (ScheduleChoice choice : workingDomain) {
 						tempSchedule = bestSchedule.clone();
@@ -99,25 +97,59 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 							bestChoice = tempSchedule.clone();
 						}
 					}
+				}*/
+				
+				// Greedy Descent with Stagnation Detection
+				for (int i = 0; i < bestSchedule.length; i++) {
+					int stagnant = DEPTH;
+					// Try swapping with unused options in working domain
+					for (ScheduleChoice choice : workingDomain) {
+						tempSchedule = bestSchedule.clone();
+						tempSchedule[i] = choice;
+						int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+						if (score < min) {
+							min = score;
+							bestChoice = tempSchedule.clone();
+						} else
+							stagnant--;
+						if (stagnant == 0)
+							break;
+					}
+					// Try swapping with another course's exam slot
+					for (int j = i + 1; j < bestSchedule.length; j++) {
+						tempSchedule = bestSchedule.clone();
+						tempSchedule = swap(tempSchedule.clone(), i, j);
+						int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+						if (score < min) {
+							min = score;
+							bestChoice = tempSchedule.clone();
+						}  else
+							stagnant--;
+						if (stagnant == 0)
+							break;
+					}
 				}
 				
 				// Random Walks
-				// Randomly check possible neighbours and transition at first occurrence of improvement
+				// Randomly check possible neighbours and transition at first occurrence of improvement up
+				// to depth
 				/*for (int i = 0; i < DEPTH; i++) {
+					List<ScheduleChoice> tempDomain = copy(workingDomain);
 					if (min == 0)
 						break;
 					int choice = r.nextInt(workingDomain.size() + bestSchedule.length);
 					if (choice >= workingDomain.size()) {
 						choice -= workingDomain.size();
 						tempSchedule = swap(tempSchedule, r.nextInt(tempSchedule.length), choice);
-					} else 
-						tempSchedule = swap(tempSchedule, workingDomain, r.nextInt(tempSchedule.length), choice);
-					
+					} else {
+						tempDomain = copy(workingDomain);
+						tempSchedule = swap(tempSchedule, tempDomain, r.nextInt(tempSchedule.length), choice);
+					}
 					int score = evaluator.violatedConstraints(pInstance, tempSchedule);
 					if (score < min) {
 						min = score;
+						workingDomain = copy(tempDomain);
 						bestChoice = tempSchedule.clone();
-//						System.err.println("New best schedule: " + min + " violations."); // debug
 					}
 				}*/
 				

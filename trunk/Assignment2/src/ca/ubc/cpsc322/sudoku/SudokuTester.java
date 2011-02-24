@@ -21,7 +21,7 @@ public class SudokuTester {
 	 */
 	public static void main(String[] argv) throws java.io.IOException {
 		
-		JeffSudokuSolver acSolver = new JeffSudokuSolver();
+		SudokuSolver acSolver = new SudokuSolver();
 		System.out.println(acSolver.authors() + "\n");
 
 		/** Easy Sudokus */
@@ -41,23 +41,23 @@ public class SudokuTester {
 		 * http://en.wikipedia.org/wiki/Algorithmics_of_sudoku . Do not pay much attention to analysis presented in this Wikipedia article, it is not
 		 * very scientific.
 		 */
-		//test(acSolver, "easterMonster", true, false); // Time: 1s (bonus 4s)
-		//test(acSolver, "tarek071223170000-052", true, false); // Time: 3s (bonus 5s)
-		//test(acSolver, "goldenNugget", true, false); // Time: 6s (bonus 7s)
+		test(acSolver, "easterMonster", true, false); // Time: 1s (bonus 4s)
+		test(acSolver, "tarek071223170000-052", true, false); // Time: 3s (bonus 5s)
+		test(acSolver, "goldenNugget", true, false); // Time: 6s (bonus 7s)
 
 		/**
 		 * Two Sudokus with only 17 givens from http://people.csse.uwa.edu.au/gordon/sudokumin.php, which is the smallest known number of givens
 		 * yielding valid Sudokus. They turn out to be quite hard to solve by AC+domain splitting (think why?), but specialized Sudoku solvers (for
 		 * example http://www.sudokusolver.co.uk/) can solve them immediately.
 		 */
-		//test(acSolver, "minimum1", true, false); // Time: 47s (bonus 166s)
-		//test(acSolver, "minimum50", true, false); // Time: 59s (bonus 90s)
+		test(acSolver, "minimum1", true, false); // Time: 47s (bonus 166s)
+		test(acSolver, "minimum50", true, false); // Time: 59s (bonus 90s)
 
 		/**
 		 * A Sudoku that is exceptionally hard for brute-force algorithms. It is also challenging for AC with domain splitting (think why?). We are
 		 * not going to test your AC algorithms on this instance :-). Source: http://en.wikipedia.org/wiki/Algorithmics_of_sudoku
 		 */
-		// test(acSolver, "nearWorstCase", true, false); // Time: 1275s (bonus 1275s)
+		 test(acSolver, "nearWorstCase", true, false); // Time: 1275s (bonus 1275s)
 		
 		/** Invalid Sudokus - bonus question */
 		// This Sudoku is invalid because it has no solutions - exception should be thrown.
@@ -74,7 +74,7 @@ public class SudokuTester {
 	 * 
 	 * @throws IOException
 	 */
-	private static void test(JeffSudokuSolver acSolver, String boardName, boolean hasSolution, boolean verbose) throws IOException {
+	private static void test(SudokuSolver acSolver, String boardName, boolean hasSolution, boolean verbose) throws IOException {
 		long time = System.currentTimeMillis();
 		try {
 			System.out.println("Board '" + boardName + "': ");
