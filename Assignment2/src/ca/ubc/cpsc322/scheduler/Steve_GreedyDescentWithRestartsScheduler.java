@@ -7,7 +7,8 @@ import java.util.List;
  * A stub for your Greedy Descent With Restarts scheduler
  */
 public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
-	private static final double RESTART_RATE = 0.6;
+	private static final double RESTART_RATE = 0.4;
+	private static final int DEPTH = 100;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
@@ -37,6 +38,9 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 			
 			List<ScheduleChoice> workingDomain = copy(DOMAIN);
 			bestSchedule = restart(pInstance, workingDomain);
+			ScheduleChoice[] tempSchedule = bestSchedule.clone();
+			ScheduleChoice[] bestChoice = bestSchedule.clone();
+			
 			while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestSchedule) > 0) {
 				// Random restart
 				if (r.nextDouble() < RESTART_RATE) {
@@ -44,13 +48,35 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 					bestSchedule = restart(pInstance, workingDomain);
 				}
 				
+				int min = evaluator.violatedConstraints(pInstance, bestSchedule);
+				
+				// General Local Search Algorithm
+				for (int i = 0; i < bestSchedule.length; i++) {
+					tempSchedule = bestSchedule.clone();
+					int index = r.nextInt(workingDomain.size() + bestSchedule.length);
+					if (index >= workingDomain.size()) {
+						index -= workingDomain.size();
+						tempSchedule = swap(tempSchedule, i, index);
+						int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+						if (score < min) {
+							min = score;
+							bestChoice = tempSchedule.clone();
+						}
+					} else {
+						ScheduleChoice temp = tempSchedule[i];
+						tempSchedule[i] = workingDomain.get(index);
+						int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+						if (score < min) {
+							min = score;
+							workingDomain.set(index, temp);
+							bestChoice = tempSchedule.clone();
+						}
+					}
+				}
+				
 				// Greedy Descent
 				// For each course, find which swap results in lowest # conflicts, then set as best
-				ScheduleChoice[] tempSchedule = bestSchedule.clone();
-				ScheduleChoice[] bestChoice = bestSchedule.clone();
-				for (int i = 0; i < bestSchedule.length; i++) {
-					int min = evaluator.violatedConstraints(pInstance, bestSchedule);
-					
+				/*for (int i = 0; i < bestSchedule.length; i++) {
 					// Swap with unused options in working domain
 					for (ScheduleChoice choice : workingDomain) {
 						tempSchedule = bestSchedule.clone();
@@ -61,9 +87,8 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 							bestChoice = tempSchedule.clone();
 						}
 					}
-						
 					// Swap with another course's exam slot
-					for (int j = 0; j < bestSchedule.length; j++) {
+					for (int j = i + 1; j < bestSchedule.length; j++) {
 						tempSchedule = bestSchedule.clone();
 						tempSchedule = swap(tempSchedule.clone(), i, j);
 						int score = evaluator.violatedConstraints(pInstance, tempSchedule);
@@ -72,13 +97,33 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 							bestChoice = tempSchedule.clone();
 						}
 					}
+				}*/
+				
+				// Random Walks
+				// Randomly check possible neighbours and transition at first occurrence of improvement
+				/*for (int i = 0; i < DEPTH; i++) {
+					if (min == 0)
+						break;
+					int choice = r.nextInt(workingDomain.size() + bestSchedule.length);
+					if (choice >= workingDomain.size()) {
+						choice -= workingDomain.size();
+						tempSchedule = swap(tempSchedule, r.nextInt(tempSchedule.length), choice);
+					} else 
+						tempSchedule = swap(tempSchedule, workingDomain, r.nextInt(tempSchedule.length), choice);
 					
-				}
+					int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+					if (score < min) {
+						min = score;
+						bestChoice = tempSchedule.clone();
+//						System.err.println("New best schedule: " + min + " violations."); // debug
+					}
+				}*/
+				
 				bestSchedule = bestChoice.clone();
 			}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return bestSchedule;
 	}
 	
@@ -96,11 +141,26 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 		return schedule;
 	}
 	
+	private ScheduleChoice[] swap(ScheduleChoice[] schedule, List<ScheduleChoice> domain, int a, int b) {
+		// We are not concerned with maintaining the swap location b in the list
+		domain.add(schedule[a]);
+		schedule[a] = domain.remove(b);
+		return schedule;
+	}
+	
 	private ScheduleChoice[] restart(SchedulingInstance pInstance, List<ScheduleChoice> domain) {
 		ScheduleChoice[] schedule = new ScheduleChoice[pInstance.numCourses];
 		for(int i = 0; i < pInstance.numCourses; i++)
 			schedule[i] = domain.remove(r.nextInt(domain.size()));
 		return schedule;
+	}
+	
+	// debugging
+	private void printDomain(List<ScheduleChoice> domain) {
+		System.err.println("#\t\t" + "ROOM\tTIMESLOT");
+		for (int i = 0; i < domain.size(); i++) {
+			System.err.println(i + ")\t\t" + domain.get(i).room + "\t" + domain.get(i).timeslot);
+		}
 	}
 	
 }

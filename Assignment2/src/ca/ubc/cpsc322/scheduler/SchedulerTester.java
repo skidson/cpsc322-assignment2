@@ -58,7 +58,7 @@ public class SchedulerTester {
 				test(scheduler, evaluator, "instances/simple_5.txt", 0, 1, true);
 	
 				// Easy infeasible instance with 4 rooms, 3 courses, 3 students, 2 timeslots 
-				test(scheduler, evaluator, "instances/threeStudentsInfeasible.txt", 1, 5, true);
+//				test(scheduler, evaluator, "instances/threeStudentsInfeasible.txt", 1, 5, true);
 				
 				// Small instances with 10 rooms, 10 courses, 30 students, 9 timeslots
 				test(scheduler, evaluator, "instances/small_1.txt", 0, 1, true);
