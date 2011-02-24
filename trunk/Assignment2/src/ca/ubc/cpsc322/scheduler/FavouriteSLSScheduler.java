@@ -2,7 +2,6 @@ package ca.ubc.cpsc322.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * A stub for your second scheduler
@@ -24,19 +23,49 @@ public class FavouriteSLSScheduler extends Scheduler {
 		this.pInstance = pInstance;
 		
 		// Populate the domain
-		Vector<ScheduleChoice> DOMAIN = new Vector<ScheduleChoice>();
+		List<ScheduleChoice> workingDomain = new ArrayList<ScheduleChoice>();
 		for (int room = 0; room < pInstance.numRooms; room++) {
 			for (int timeslot = 0; timeslot < pInstance.numTimeslots; timeslot++) {
 				ScheduleChoice choice = new ScheduleChoice();
 				choice.room = room;
 				choice.timeslot = timeslot;
-				DOMAIN.add(choice);
+				workingDomain.add(choice);
 			}
 		}
+		final List<ScheduleChoice> DOMAIN = copy(workingDomain);
 		
+		// Initialize to a random variable assignment
 		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN));
-		while(!timeIsUp() && evaluator.violatedConstraints(pInstance, bestSchedule) > 0) {
-			// Bayesian Optimization
+		int min = evaluator.violatedConstraints(pInstance, bestSchedule);
+		int v = 0;
+		while(!timeIsUp() && min > 0) {
+			
+			ScheduleChoice[] tempSchedule = bestSchedule.clone();
+			ScheduleChoice[] bestChoice = bestSchedule.clone();
+			
+			// Swap with unused options in working domain
+			for (ScheduleChoice choice : workingDomain) {
+				tempSchedule = bestSchedule.clone();
+				tempSchedule[v] = choice;
+				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+				if (score < min) {
+					min = score;
+					bestChoice = tempSchedule.clone();
+				}
+			}
+			// Swap with another course's exam slot
+			for (int j = v + 1; j < bestSchedule.length; j++) {
+				tempSchedule = bestSchedule.clone();
+				tempSchedule = swap(tempSchedule.clone(), v, j);
+				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+				if (score < min) {
+					min = score;
+					bestChoice = tempSchedule.clone();
+				}
+			}
+			v = (v+1)%bestSchedule.length;
+			bestSchedule = bestChoice.clone();
+			min = evaluator.violatedConstraints(pInstance, bestSchedule);
 		}
 		
 		return bestSchedule;
