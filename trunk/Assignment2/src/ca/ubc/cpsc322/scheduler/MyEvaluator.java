@@ -1,14 +1,17 @@
 package ca.ubc.cpsc322.scheduler;
 
+import java.util.Vector;
+
 public class MyEvaluator implements Evaluator{
 
 	public int violatedConstraints(SchedulingInstance pInstance, ScheduleChoice[] pCandidateSchedule) throws Exception {
-		int result = 0;
-		
+		int hardConflicts = 0;
+		int softConflicts = 0;
+
 		if (pCandidateSchedule == null){
 			return Integer.MAX_VALUE;
 		}
-			
+
 		/* Throw error for incomplete schedules */
 		if (pCandidateSchedule.length != pInstance.numCourses) {
 			throw new Exception("Incomplete Exam Schedule. Have to assign a time and room to every exam!");
@@ -29,12 +32,27 @@ public class MyEvaluator implements Evaluator{
 			for (int j = i+1; j < pCandidateSchedule.length; j++) {
 				if (pCandidateSchedule[i].timeslot == pCandidateSchedule[j].timeslot && pCandidateSchedule[i].room == pCandidateSchedule[j].room) {
 					//=== We cannot schedule two exams into the same timeslot and room.
-					return Integer.MAX_VALUE;
+					hardConflicts++;
 				}
 			}
 		}
-		
-		return result;
-	}
 
+
+		/* Count student conflicts */
+
+		Vector<Vector<Integer>> studentsCourses = pInstance.studentsCourses;
+		for (int student = 0; student < pInstance.numStudents; student++) {
+			Vector<Integer> coursesOfThisStudent = studentsCourses.elementAt(student);
+			for (int i = 0; i < coursesOfThisStudent.size(); i++) {
+				for (int j = i+1; j < coursesOfThisStudent.size(); j++) {
+					if (pCandidateSchedule[coursesOfThisStudent.elementAt(i)].timeslot == pCandidateSchedule[coursesOfThisStudent.elementAt(j)].timeslot){
+						softConflicts++;
+					}
+				}
+			}
+		}
+		return (hardConflicts*1000 + softConflicts*2);
+	}
 }
+
+
