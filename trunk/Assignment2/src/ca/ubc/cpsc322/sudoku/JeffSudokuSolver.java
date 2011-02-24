@@ -3,11 +3,8 @@ package ca.ubc.cpsc322.sudoku;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import ca.ubc.cpsc322.sudoku.SudokuSolver.Cell;
 
 
 public class JeffSudokuSolver {
@@ -16,7 +13,7 @@ public class JeffSudokuSolver {
 	 * @return names of the authors and their student IDs (1 per line).
 	 */
 	public String authors() {
-		return "Stephen Kidson - #15345077\nJeff Payan - #18618074";
+		return "Stephen Kidson\n15345077\nJeff Payan\n18618074";
 	}
 
 	/**
@@ -54,15 +51,14 @@ public class JeffSudokuSolver {
 			}
 	}
 
-	public Cell[][] copyCells(Cell[][] origCells){
+	/*public Cell[][] copyCells(Cell[][] origCells){
 		Cell[][] copy = new Cell[9][9];
-		
 		for (int x = 0; x < 9; x++)
 			for (int y = 0; y < 9; y++) {
 				copy[x][y] = origCells[x][y].clone();
 			}
 		return copy;
-	}
+	}*/
 
 	public int[][] copyBoard(int[][] board){
 		int[][] copy = new int[9][9];
@@ -154,8 +150,8 @@ public class JeffSudokuSolver {
 			return board;
 		}
 		//Make 2 deep copies of cells arrays
-		Cell[][] cells1 = copyCells(cells);
-		Cell[][] cells2 = copyCells(cells);
+		Cell[][] cells1 = cells.clone();
+		Cell[][] cells2 = cells.clone();
 		
 		splitDomains(cells1, cells2);
 		
@@ -307,7 +303,7 @@ public class JeffSudokuSolver {
 			}else domains.add(value);
 		}
 		
-		public Cell clone(){
+		public Cell clone() {
 			Cell theClone = new Cell(this.value, this.coord[0], this.coord[1]);
 			theClone.domains = new HashSet<Integer>();
 			for(Integer i : this.domains) theClone.domains.add(i);

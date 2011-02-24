@@ -7,7 +7,7 @@ import java.util.List;
  * A stub for your Greedy Descent With Restarts scheduler
  */
 public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
-	private static final double RESTART_RATE = 0.4;
+	private static final double RESTART_RATE = 0.6;
 	private static final int DEPTH = 100;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
@@ -51,7 +51,8 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 				int min = evaluator.violatedConstraints(pInstance, bestSchedule);
 				
 				// General Local Search Algorithm
-				for (int i = 0; i < bestSchedule.length; i++) {
+				// Systematically checks all variables and swaps with a random value from domain
+				/*for (int i = 0; i < bestSchedule.length; i++) {
 					tempSchedule = bestSchedule.clone();
 					int index = r.nextInt(workingDomain.size() + bestSchedule.length);
 					if (index >= workingDomain.size()) {
@@ -72,11 +73,12 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 							bestChoice = tempSchedule.clone();
 						}
 					}
-				}
+				}*/
 				
 				// Greedy Descent
 				// For each course, find which swap results in lowest # conflicts, then set as best
-				/*for (int i = 0; i < bestSchedule.length; i++) {
+				// Note: checks all neighbours before making a decision.
+				for (int i = 0; i < bestSchedule.length; i++) {
 					// Swap with unused options in working domain
 					for (ScheduleChoice choice : workingDomain) {
 						tempSchedule = bestSchedule.clone();
@@ -97,7 +99,7 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 							bestChoice = tempSchedule.clone();
 						}
 					}
-				}*/
+				}
 				
 				// Random Walks
 				// Randomly check possible neighbours and transition at first occurrence of improvement
@@ -116,6 +118,17 @@ public class Steve_GreedyDescentWithRestartsScheduler extends Scheduler {
 						min = score;
 						bestChoice = tempSchedule.clone();
 //						System.err.println("New best schedule: " + min + " violations."); // debug
+					}
+				}*/
+				
+				// Totally Fucking Random
+				/*tempSchedule = bestSchedule.clone();
+				for (int i = 0; i < bestSchedule.length; i++) {
+					tempSchedule[i] = DOMAIN.get(r.nextInt(DOMAIN.size()));
+					int score = evaluator.violatedConstraints(pInstance, tempSchedule);
+					if (score < min) {
+						min = score;
+						bestChoice = tempSchedule.clone();
 					}
 				}*/
 				
