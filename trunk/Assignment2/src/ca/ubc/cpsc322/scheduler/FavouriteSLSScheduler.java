@@ -7,7 +7,9 @@ import java.util.List;
  * A stub for your second scheduler
  */
 public class FavouriteSLSScheduler extends Scheduler {
-	SchedulingInstance pInstance;
+	private SchedulingInstance pInstance;
+	private static final int CACHE_SIZE = 3;
+	private static final double RESTART_RATE = 0.6;
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
@@ -35,14 +37,28 @@ public class FavouriteSLSScheduler extends Scheduler {
 		final List<ScheduleChoice> DOMAIN = copy(workingDomain);
 		
 		// Initialize to a random variable assignment
-		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN));
+		ScheduleChoice[] bestSchedule = restart(copy(DOMAIN), true);
+		ScheduleChoice[][] cache = new ScheduleChoice[CACHE_SIZE][bestSchedule.length];
+		
+		// Initialize the cache
+		for (int i = 0; i < CACHE_SIZE; i++)
+			cache[i] = bestSchedule;
+		
 		int min = evaluator.violatedConstraints(pInstance, bestSchedule);
-		int v = 0;
-		final int STAGNANT = pInstance.numCourses;
+		
+		// Greedy Descent with Two Stage Selection and Steve's 1337 skillz
+		// Restarts when stagnant. Randomly revert to cached value.
+		int v = 0; int c = 0;
+		final int STAGNANT = DOMAIN.size()/bestSchedule.length;
 		while(!timeIsUp() && min > 0) {
-			// Reset on stagnant, randomly load from cache
 			ScheduleChoice[] tempSchedule = bestSchedule.clone();
 			ScheduleChoice[] bestChoice = bestSchedule.clone();
+			
+			// Cache the current schedule and return to previously cached value
+			if (r.nextDouble() < RESTART_RATE) {
+				workingDomain = copy(DOMAIN);
+				bestSchedule = restart(workingDomain, true);
+			}
 			
 			// Swap with unused options in working domain
 			for (ScheduleChoice choice : workingDomain) {
@@ -50,6 +66,7 @@ public class FavouriteSLSScheduler extends Scheduler {
 				tempSchedule[v%tempSchedule.length] = choice;
 				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
 				if (score < min) {
+					cache[(c++)%CACHE_SIZE] = bestSchedule.clone();
 					min = score;
 					bestChoice = tempSchedule.clone();
 				}
@@ -57,50 +74,74 @@ public class FavouriteSLSScheduler extends Scheduler {
 			// Swap with another course's exam slot
 			for (int j = (v%tempSchedule.length) + 1; j < bestSchedule.length; j++) {
 				tempSchedule = bestSchedule.clone();
-				tempSchedule = swap(tempSchedule.clone(), (v%tempSchedule.length), j);
+				swap(tempSchedule, (v%tempSchedule.length), j);
 				int score = evaluator.violatedConstraints(pInstance, tempSchedule);
 				if (score < min) {
+					cache[(c++)%CACHE_SIZE] = bestSchedule.clone();
 					min = score;
 					bestChoice = tempSchedule.clone();
 				}
 			}
-			if (v++ >= STAGNANT) {
-				bestChoice = restart(copy(DOMAIN));
-				v = 0;
-			}
+			if (v++ >= STAGNANT)
+				bestChoice = cache[c++%CACHE_SIZE];
 			bestSchedule = bestChoice.clone();
 			min = evaluator.violatedConstraints(pInstance, bestSchedule);
 		}
 		
-		return bestSchedule;
+		// Return the best value in cache.
+		int index = 0;
+		min = evaluator.violatedConstraints(pInstance, cache[0]);
+		for (int i = 1; i < CACHE_SIZE; i++) {
+			int score = evaluator.violatedConstraints(pInstance, cache[i]);
+			if (score < min) {
+				min = score;
+				index = i;
+			}
+		}
+		
+		return cache[index];
 	}
 	
-	private ScheduleChoice[] restart(List<ScheduleChoice> domain) {
-		ScheduleChoice[] schedule = new ScheduleChoice[pInstance.numCourses];
-		for(int i = 0; i < pInstance.numCourses; i++)
-			schedule[i] = domain.remove(r.nextInt(domain.size()));
-		return schedule;
+	/**
+	 * Swaps the two elements of this array at the indicated indices.
+	 * @param array the array to be modified.
+	 * @param a the index of the first element.
+	 * @param b the index of the second element.
+	 */
+	private void swap(Object[] array, int a, int b) {
+		Object temp = array[a];
+		array[a] = array[b];
+		array[b] = temp;
 	}
 	
-	private ScheduleChoice[] swap(ScheduleChoice[] schedule, int a, int b) {
-		ScheduleChoice temp = schedule[a];
-		schedule[a] = schedule[b];
-		schedule[b] = temp;
-		return schedule;
-	}
-	
-	private ScheduleChoice[] swap(ScheduleChoice[] schedule, List<ScheduleChoice> domain, int a, int b) {
-		// We are not concerned with maintaining the swap location b in the list
-		domain.add(schedule[a]);
-		schedule[a] = domain.remove(b);
-		return schedule;
-	}
-	
+	/**
+	 * Copies the contents of the passed List using each element's clone
+	 * method and returns a deep copy of the List.
+	 * @param domain
+	 * @return
+	 */
 	private List<ScheduleChoice> copy(List<ScheduleChoice> domain) {
 		List<ScheduleChoice> copy = new ArrayList<ScheduleChoice>();
 		for(ScheduleChoice choice : domain)
 			copy.add(choice.clone());
 		return copy;
+	}
+	
+	/**
+	 * Creates an array initialized with the values from the specified domain.
+	 * @param domain a List of acceptable values.
+	 * @param unique whether values in the domain are unique (i.e. duplicates may exist).
+	 * @return
+	 */
+	private ScheduleChoice[] restart(List<ScheduleChoice> domain, boolean unique) {
+		ScheduleChoice[] schedule = new ScheduleChoice[pInstance.numCourses];
+		for(int i = 0; i < pInstance.numCourses; i++) {
+			if (unique)
+				schedule[i] = domain.remove(r.nextInt(domain.size()));
+			else
+				schedule[i] = domain.get(r.nextInt(domain.size()));
+		}
+		return schedule;
 	}
 
 }
