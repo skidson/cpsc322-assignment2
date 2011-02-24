@@ -32,9 +32,9 @@ public class SudokuTester {
 		// This Sudoku can not be solved by AC alone, it requires domain splitting.
 		test(acSolver, "hard", true, true); // Time: 0s (bonus 0s)
 		// Evil level Sudoku from www.websudoku.com, it is difficult for people, easy for AC+domain splitting
-		//test(acSolver, "evil", true, false); // Time: 0s (bonus 0s)
+		test(acSolver, "evil", true, false); // Time: 0s (bonus 0s)
 		// Sudoku from Sudoku enthusiast (http://www.flickr.com/photos/npcomplete/2384354604/), requires domain splitting
-		//test(acSolver, "starBurstLeo", true, false); // Time: 0s (bonus 0s)
+		test(acSolver, "starBurstLeo", true, false); // Time: 0s (bonus 0s)
 
 		/**
 		 * Somewhat harder Sudokus, supposedly they pose a challenge to Sudokus solvers. They all require domain splitting. Taken from
@@ -61,9 +61,9 @@ public class SudokuTester {
 		
 		/** Invalid Sudokus - bonus question */
 		// This Sudoku is invalid because it has no solutions - exception should be thrown.
-		//test(acSolver, "noSolutions", false, false); // Time: bonus 0s
+		test(acSolver, "noSolutions", false, false); // Time: bonus 0s
 		// This Sudoku is invalid because it has multiple (two) solutions - exception should be thrown.
-		//test(acSolver, "twoSolutions", false, false); // Time: bonus 0s
+		test(acSolver, "twoSolutions", false, false); // Time: bonus 0s
 	}
 
 	/**
