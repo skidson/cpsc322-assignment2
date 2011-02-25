@@ -1,42 +1,22 @@
 package ca.ubc.cpsc322.scheduler;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A stub for your second scheduler
+ * A custom scheduler that implements a genetic local search algorithm.
+ * @see Scheduler
  */
 public class FavouriteSLSScheduler extends Scheduler {
 	private SchedulingInstance pInstance;
-	private static double MUTATION_RATE = 0.75;
-	private static double APOCALYPSE_RATE = 0.01;
-	
-	// For finding optimal rates.
-	public static void main(String args[]) throws IOException {
-		Scheduler scheduler = new FavouriteSLSScheduler();
-		Evaluator evaluator = new OrigEvaluator();
-		for (int m = 0; m < 5; m++) {
-			System.out.println("MUTATION RATE " + m*0.2);
-			((FavouriteSLSScheduler)scheduler).setMutationRate(m*0.2);
-			for (int a = 0; a < 5; a++) {
-				System.out.println("APOCALYPSE RATE " + a*0.1);
-				((FavouriteSLSScheduler)scheduler).setApocalypseRate(m*0.1);
-				// Large instances with 10 rooms, 50 courses, 500 students, 20 timeslots
-				SchedulerTester.test(scheduler, evaluator, "instances/large_1.txt", 0, 10, false);
-				SchedulerTester.test(scheduler, evaluator, "instances/large_2.txt", 0, 10, false);
-				SchedulerTester.test(scheduler, evaluator, "instances/large_3.txt", 0, 10, false);
-				SchedulerTester.test(scheduler, evaluator, "instances/large_4.txt", 0, 10, false);
-				SchedulerTester.test(scheduler, evaluator, "instances/large_5.txt", 0, 10, false);
-			}
-		}
-	}
+	private static double mutationRate = 0.6;
+	private static double apocalypseRate = 0.000005;
 	
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
 	public String authorsAndStudentIDs() {
-		return ("Jeffrey Payan \n18618074 \nStephen Kidson \n15345077");
+		return ("Jeffrey Payan\n18618074\nStephen Kidson\n15345077");
 	}
 
 	/**
@@ -65,7 +45,8 @@ public class FavouriteSLSScheduler extends Scheduler {
 		ScheduleChoice[] eve = humanity[1];
 		int min = Integer.MAX_VALUE;
 		while(!timeIsUp() && min > 0) {
-			if (r.nextDouble() < APOCALYPSE_RATE) {
+			if (r.nextDouble() < apocalypseRate) {
+				workingDomain = copy(WORLD);
 				humanity = apocalypse(WORLD);
 				adam = humanity[0].clone();
 				eve = humanity[1].clone();
@@ -84,8 +65,8 @@ public class FavouriteSLSScheduler extends Scheduler {
 			// Start new generation
 			humanity[0] = adam.clone();
 			humanity[1] = eve.clone();
-			humanity[2] = sex(adam, eve, copy(WORLD));
-			humanity[3] = sex(eve, adam, copy(WORLD));
+			humanity[2] = procreate(adam, eve, copy(workingDomain));
+			humanity[3] = procreate(eve, adam, copy(workingDomain));
 			min = evaluator.violatedConstraints(pInstance, adam);
 		}
 		return adam;
@@ -122,13 +103,15 @@ public class FavouriteSLSScheduler extends Scheduler {
 	}
 	
 	/**
-	 * Produces a child that inherits aspects of both parents & random defects
-	 * @param male
+	 * Produces a child that inherits aspects of both parents & random defects based on this
+	 * scheduler's mutation rate. It is typical to make two calls to this method and swap
+	 * the roles of male and female.
+	 * @param male 
 	 * @param female
-	 * @param domain
+	 * @param domain the domain of possible variables.
 	 * @return
 	 */
-	private ScheduleChoice[] sex(ScheduleChoice[] male, 
+	private ScheduleChoice[] procreate(ScheduleChoice[] male, 
 			ScheduleChoice[] female, 
 			List<ScheduleChoice> domain) {
 		ScheduleChoice[] child = new ScheduleChoice[male.length];
@@ -136,204 +119,36 @@ public class FavouriteSLSScheduler extends Scheduler {
 			child[i] = male[i].clone();
 		for (int i = 1; i < male.length; i += 2)
 			child[i] = female[i].clone();
-		while(r.nextDouble() < MUTATION_RATE)
-			child[r.nextInt(child.length)] = domain.get(r.nextInt(domain.size())).clone();
+		while(r.nextDouble() < mutationRate) {
+			int gene = r.nextInt(child.length);
+			ScheduleChoice trait = child[gene].clone();
+			child[gene] = domain.remove(r.nextInt(domain.size())).clone();
+			domain.add(trait);
+		}
 		return child;
 	}
 	
+	/**
+	 * Generates newly initialized parents and offspring.
+	 * @param domain
+	 * @return
+	 */
 	private ScheduleChoice[][] apocalypse(List<ScheduleChoice> domain) {
 		ScheduleChoice[] adam = restart(copy(domain), true), eve = restart(copy(domain), true);
 		ScheduleChoice[][] humanity = new ScheduleChoice[4][pInstance.numCourses];
 		humanity[0] = adam.clone();
 		humanity[1] = eve.clone();
-		humanity[2] = sex(adam, eve, copy(domain));
-		humanity[3] = sex(eve, adam, copy(domain));
+		humanity[2] = procreate(adam, eve, copy(domain));
+		humanity[3] = procreate(eve, adam, copy(domain));
 		return humanity;
 	}
 	
 	public static void setMutationRate(double rate) {
-		MUTATION_RATE = rate;
+		mutationRate = rate;
 	}
 	
 	public static void setApocalypseRate(double rate) {
-		APOCALYPSE_RATE = rate;
+		apocalypseRate = rate;
 	}
 
 }
-
-// Below are various variations we attempted.
-
-//General Local Search Algorithm
-// Systematically checks all variables and swaps with a random value from domain
-/*for (int i = 0; i < bestSchedule.length; i++) {
-	tempSchedule = bestSchedule.clone();
-	int index = r.nextInt(workingDomain.size() + bestSchedule.length);
-	if (index >= workingDomain.size()) {
-		index -= workingDomain.size();
-		tempSchedule = swap(tempSchedule, i, index);
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}
-	} else {
-		ScheduleChoice temp = tempSchedule[i];
-		tempSchedule[i] = workingDomain.get(index);
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			workingDomain.set(index, temp);
-			bestChoice = tempSchedule.clone();
-		}
-	}
-}*/
-
-// Greedy Descent with One Stage Selection and Stagnation Detection
-/*int stagnant = DEPTH;
-while (evaluator.violatedConstraints(pInstance, tempSchedule) >= Integer.MAX_VALUE ||
-		stagnant > 0) {
-	tempSchedule = bestSchedule.clone();
-	tempSchedule[r.nextInt(tempSchedule.length)] = DOMAIN.get(r.nextInt(DOMAIN.size()));
-	int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-	if (score < min) {
-		min = score;
-		bestChoice = tempSchedule.clone();
-	} else
-		stagnant--;
-}*/
-
-// Greedy Descent with Two Stage Selection
-// For each course, find which swap results in lowest # conflicts, then set as best
-// Checks all neighbours before making a decision.
-/*for (int i = 0; i < bestSchedule.length; i++) {
-	// Swap with unused options in working domain
-	for (ScheduleChoice choice : workingDomain) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule[i] = choice;
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}
-	}
-	// Swap with another course's exam slot
-	for (int j = i + 1; j < bestSchedule.length; j++) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule = swap(tempSchedule.clone(), i, j);
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}
-	}
-}*/
-
-// Greedy Descent with Two Stage Selection and Stagnation Detection
-/*for (int i = 0; i < bestSchedule.length; i++) {
-	int stagnant = DEPTH;
-	// Try swapping with unused options in working domain
-	for (ScheduleChoice choice : workingDomain) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule[i] = choice;
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		} else
-			stagnant--;
-		if (stagnant == 0)
-			break;
-	}
-	// Try swapping with another course's exam slot
-	for (int j = i + 1; j < bestSchedule.length; j++) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule = swap(tempSchedule.clone(), i, j);
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}  else
-			stagnant--;
-		if (stagnant == 0)
-			break;
-	}
-}*/
-
-// Greedy Descent with with Two Stage Selection and Simulated Annealing
-/*for (int i = 0; i < bestSchedule.length; i++) {
-	// Try swapping with unused options in working domain
-	for (ScheduleChoice choice : workingDomain) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule[i] = choice;
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min || r.nextDouble() < (score-min)/temperature) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}
-	}
-	// Try swapping with another course's exam slot
-	for (int j = i + 1; j < bestSchedule.length; j++) {
-		tempSchedule = bestSchedule.clone();
-		tempSchedule = swap(tempSchedule.clone(), i, j);
-		int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-		if (score < min || r.nextDouble() < (score-min)/temperature) {
-			min = score;
-			bestChoice = tempSchedule.clone();
-		}
-	}
-}
-// Annealing schedule
-temperature *= 0.90;*/
-
-// Depth-Based Greedy Descent with Two Stage Selection
-// Randomly check possible neighbours and transition at first occurrence of improvement up
-// to depth
-/*for (int i = 0; i < DEPTH; i++) {
-	List<ScheduleChoice> tempDomain = copy(workingDomain);
-	if (min == 0)
-		break;
-	int choice = r.nextInt(workingDomain.size() + bestSchedule.length);
-	if (choice >= workingDomain.size()) {
-		choice -= workingDomain.size();
-		tempSchedule = swap(tempSchedule, r.nextInt(tempSchedule.length), choice);
-	} else {
-		tempDomain = copy(workingDomain);
-		tempSchedule = swap(tempSchedule, tempDomain, r.nextInt(tempSchedule.length), choice);
-	}
-	int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-	if (score < min) {
-		min = score;
-		workingDomain = copy(tempDomain);
-		bestChoice = tempSchedule.clone();
-	}
-}*/
-
-// Greedy Descent with Random Steps and Hard Constraint Requirement
-/*while(evaluator.violatedConstraints(pInstance, bestChoice) >= Integer.MAX_VALUE) {
-	tempSchedule[r.nextInt(tempSchedule.length)] = DOMAIN.get(r.nextInt(DOMAIN.size()));
-	int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-	if (score < min) {
-		min = score;
-		bestChoice = tempSchedule.clone();
-	} 
-}*/
-
-// Depth-Based Random Walks with Hard Constraint Requirement
-/*for (int i = 0; i < DEPTH; i++) {
-	do {
-		tempSchedule = bestChoice.clone();
-		tempSchedule[r.nextInt(tempSchedule.length)] = DOMAIN.get(r.nextInt(DOMAIN.size()));
-	} while(evaluator.violatedConstraints(pInstance, tempSchedule) >= Integer.MAX_VALUE);
-	bestChoice = tempSchedule.clone();
-}*/
-
-// Totally Fucking Random
-/*tempSchedule = bestSchedule.clone();
-for (int i = 0; i < bestSchedule.length; i++) {
-	tempSchedule[i] = DOMAIN.get(r.nextInt(DOMAIN.size()));
-	int score = evaluator.violatedConstraints(pInstance, tempSchedule);
-	if (score < min) {
-		min = score;
-		bestChoice = tempSchedule.clone();
-	}
-}*/
