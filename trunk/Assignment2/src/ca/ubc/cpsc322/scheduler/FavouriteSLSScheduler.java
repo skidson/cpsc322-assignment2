@@ -9,8 +9,8 @@ import java.util.List;
  */
 public class FavouriteSLSScheduler extends Scheduler {
 	private SchedulingInstance pInstance;
-	private static double mutationRate = 0.6;
-	private static double apocalypseRate = 0.000005;
+	private static double mutationRate = 0.65;
+	private static double apocalypseRate = 0.0;
 	
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
