@@ -9,7 +9,7 @@ import java.io.*;
  */
 
 public class SchedulerTester {
-
+	
 	/**
 	 * Java doesn't really have a good way of timing other than the system timer, so other CPU load will be a factor. Don't encode a DVD while you're
 	 * running this.
@@ -98,7 +98,7 @@ public class SchedulerTester {
 	 * 
 	 * @throws IOException
 	 */
-	private static void test(Scheduler scheduler, Evaluator evaluator, String instanceFilename, int bestSolutionQual, float allowedTime, boolean verbose) throws IOException {
+	public static void test(Scheduler scheduler, Evaluator evaluator, String instanceFilename, int bestSolutionQual, float allowedTime, boolean verbose) throws IOException {
 		int numRuns = 5;	//=== For benchmarking SLS algorithms, we would usually use many more runs. 
 							//=== Here, we only use 5 runs per instance so we can run it for every submission.
 		long time = System.currentTimeMillis();

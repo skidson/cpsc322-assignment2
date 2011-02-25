@@ -1,5 +1,6 @@
 package ca.ubc.cpsc322.scheduler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,8 +9,29 @@ import java.util.List;
  */
 public class FavouriteSLSScheduler extends Scheduler {
 	private SchedulingInstance pInstance;
-	private static final double MUTATION_RATE = 0.1;
-	private static final double RESTART_RATE = 0.6;
+	private static double MUTATION_RATE = 0.75;
+	private static double APOCALYPSE_RATE = 0.01;
+	
+	// For finding optimal rates.
+	public static void main(String args[]) throws IOException {
+		Scheduler scheduler = new FavouriteSLSScheduler();
+		Evaluator evaluator = new OrigEvaluator();
+		for (int m = 0; m < 5; m++) {
+			System.out.println("MUTATION RATE " + m*0.2);
+			((FavouriteSLSScheduler)scheduler).setMutationRate(m*0.2);
+			for (int a = 0; a < 5; a++) {
+				System.out.println("APOCALYPSE RATE " + a*0.1);
+				((FavouriteSLSScheduler)scheduler).setApocalypseRate(m*0.1);
+				// Large instances with 10 rooms, 50 courses, 500 students, 20 timeslots
+				SchedulerTester.test(scheduler, evaluator, "instances/large_1.txt", 0, 10, false);
+				SchedulerTester.test(scheduler, evaluator, "instances/large_2.txt", 0, 10, false);
+				SchedulerTester.test(scheduler, evaluator, "instances/large_3.txt", 0, 10, false);
+				SchedulerTester.test(scheduler, evaluator, "instances/large_4.txt", 0, 10, false);
+				SchedulerTester.test(scheduler, evaluator, "instances/large_5.txt", 0, 10, false);
+			}
+		}
+	}
+	
 	/**
 	 * @see scheduler.Scheduler#authorsAndStudentIDs()
 	 */
@@ -35,19 +57,21 @@ public class FavouriteSLSScheduler extends Scheduler {
 			}
 		}
 		
-		final List<ScheduleChoice> DOMAIN = copy(workingDomain);
+		final List<ScheduleChoice> WORLD = copy(workingDomain);
 		
 		// Initialize to a random variable assignment
-		ScheduleChoice[] adam = restart(copy(DOMAIN), false), eve = restart(copy(DOMAIN), false);
-		ScheduleChoice[][] humanity = new ScheduleChoice[4][pInstance.numCourses];
-		humanity[0] = adam.clone();
-		humanity[1] = eve.clone();
-		humanity[2] = sex(adam, eve, copy(DOMAIN));
-		humanity[3] = sex(eve, adam, copy(DOMAIN));
-		
-		try {
+		ScheduleChoice[][] humanity = apocalypse(WORLD);
+		ScheduleChoice[] adam = humanity[0];
+		ScheduleChoice[] eve = humanity[1];
 		int min = Integer.MAX_VALUE;
 		while(!timeIsUp() && min > 0) {
+			if (r.nextDouble() < APOCALYPSE_RATE) {
+				humanity = apocalypse(WORLD);
+				adam = humanity[0].clone();
+				eve = humanity[1].clone();
+			}
+			
+			// Finds two prime specimens and nominates them Adam and Eve.
 			for (int i = 0; i < humanity.length; i++) {
 				int score = evaluator.violatedConstraints(pInstance, humanity[i]);
 				if (score < min) {
@@ -56,14 +80,13 @@ public class FavouriteSLSScheduler extends Scheduler {
 					adam = humanity[i].clone();
 				}
 			}
+			
+			// Start new generation
 			humanity[0] = adam.clone();
 			humanity[1] = eve.clone();
-			humanity[2] = sex(adam, eve, copy(DOMAIN));
-			humanity[3] = sex(eve, adam, copy(DOMAIN));
+			humanity[2] = sex(adam, eve, copy(WORLD));
+			humanity[3] = sex(eve, adam, copy(WORLD));
 			min = evaluator.violatedConstraints(pInstance, adam);
-		}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return adam;
 	}
@@ -113,14 +136,32 @@ public class FavouriteSLSScheduler extends Scheduler {
 			child[i] = male[i].clone();
 		for (int i = 1; i < male.length; i += 2)
 			child[i] = female[i].clone();
-		
 		while(r.nextDouble() < MUTATION_RATE)
 			child[r.nextInt(child.length)] = domain.get(r.nextInt(domain.size())).clone();
-		
 		return child;
+	}
+	
+	private ScheduleChoice[][] apocalypse(List<ScheduleChoice> domain) {
+		ScheduleChoice[] adam = restart(copy(domain), true), eve = restart(copy(domain), true);
+		ScheduleChoice[][] humanity = new ScheduleChoice[4][pInstance.numCourses];
+		humanity[0] = adam.clone();
+		humanity[1] = eve.clone();
+		humanity[2] = sex(adam, eve, copy(domain));
+		humanity[3] = sex(eve, adam, copy(domain));
+		return humanity;
+	}
+	
+	public static void setMutationRate(double rate) {
+		MUTATION_RATE = rate;
+	}
+	
+	public static void setApocalypseRate(double rate) {
+		APOCALYPSE_RATE = rate;
 	}
 
 }
+
+// Below are various variations we attempted.
 
 //General Local Search Algorithm
 // Systematically checks all variables and swaps with a random value from domain
